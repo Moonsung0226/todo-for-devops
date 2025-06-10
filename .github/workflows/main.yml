@@ -4,7 +4,7 @@ name: 🚀 Deploy Next.js App with Docker
 on:
   push:
     branches:
-      - todo-for-devops
+      - main
 
 jobs:
   deploy:
