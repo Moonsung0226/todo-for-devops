@@ -38,6 +38,7 @@ jobs:
       - name: Install dependencies and Test
         run: |
           npm install
+          npm run lint
           npm run test
 
 #      5. num run and build 명령어를 싱행
