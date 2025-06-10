@@ -1,0 +1,84 @@
+# .github/workflows/main.yml
+
+name: Deploy Next.js App to Azure VM
+
+# 메인 branch에 push가 일어나면 실행
+on:
+  push:
+    branches:
+      - main
+
+# 실행되는 job, 결과로 나온 Artifacts는 .next에 생성됨
+jobs:
+  build-and-deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest    # build-and-deploy에 사용될 local vm
+
+# 단계별 파이프라인
+    steps:
+
+#      1. v4 tool을 통해 checkout을 받아옴
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+#      2. npm 명령어 수행을 위해 Node.js 20버전을 설치
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: 'npm'
+
+#      3. env 설정파일을 만듦 - database 연동을 위함
+      - name: Create .env file for build
+        run: |
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env.local
+          echo "NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}" >> .env.local
+
+#      4. npm install -> run lint -> run test 순차적으로 실행
+      - name: Install dependencies and Test
+        run: |
+          npm install
+          npm run lint
+          npm run test
+
+#      5. num run and build 명령어를 싱행
+      - name: Build Application
+        run: npm run build
+
+#      6. Artifact 전송을 위해 압축
+      - name: Create deployment package
+        run: tar -czf deploy.tar.gz .next node_modules package.json
+
+#    ------------------------------------------------------------- 여기까지 CI의 과정
+
+#     7. artifacts를 database로 전송 및 node 서버를 통한 실행
+#      - name: Transfer package to Azure VM
+#        uses: appleboy/scp-action@master
+#        with:
+#          host: ${{ secrets.VM_HOST }}
+#          username: azureuser
+#          key: ${{ secrets.SSH_PRIVATE_KEY }}
+#          source: "deploy.tar.gz"
+#          target: "/home/azureuser"
+#
+#      - name: Deploy application on Azure VM
+#        uses: appleboy/ssh-action@master
+#        with:
+#          host: ${{ secrets.VM_HOST }}
+#          username: azureuser
+#          key: ${{ secrets.SSH_PRIVATE_KEY }}
+#          script: |
+#            mkdir -p /home/azureuser/app
+#            mv /home/azureuser/deploy.tar.gz /home/azureuser/app/
+#            cd /home/azureuser/app
+#            tar -xzf deploy.tar.gz
+#            rm deploy.tar.gz
+#
+#            pm2 stop todo-app || true
+#            pm2 delete todo-app || true
+#
+#            # pm2 start 명령어 한 줄에 환경변수를 직접 주입하여 실행합니다.
+#            DATABASE_URL='${{ secrets.DATABASE_URL }}' NEXTAUTH_SECRET='${{ secrets.NEXTAUTH_SECRET }}' pm2 start "npx next start" --name "todo-app"
+#
+#            pm2 save
+#            echo "🚀 Deployment successful!"
