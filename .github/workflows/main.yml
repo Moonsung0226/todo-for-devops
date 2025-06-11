@@ -34,7 +34,9 @@ jobs:
             az webapp create \
               --resource-group rg-appservice-infrastructure-dev-04 \
               --plan asp-dev \
-              --name todo-webapp-dev
+              --name todo-webapp-dev \
+              --os-type Linux \
+              --multicontainer-config-type None
 
             # 바로 컨테이너 설정
             az webapp config container set \
