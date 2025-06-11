@@ -30,21 +30,21 @@ jobs:
 
       - name: 🛠 Create Web App (if not exists)
         run: |
-          if ! az webapp show --name todo-webapp-dev --resource-group rg-appservice-infrastructure-dev-04 &> /dev/null; then
+          WEBAPP_NAME=todo-webapp-dev-${{ github.run_id }}
+
+          if ! az webapp show --name $WEBAPP_NAME --resource-group rg-appservice-infrastructure-dev-04 &> /dev/null; then
             az webapp create \
               --resource-group rg-appservice-infrastructure-dev-04 \
               --plan asp-dev \
-              --name todo-webapp-dev \
-              --os-type Linux \
-              --multicontainer-config-type None
+              --name $WEBAPP_NAME
 
-            # 바로 컨테이너 설정
             az webapp config container set \
-              --name todo-webapp-dev \
+              --name $WEBAPP_NAME \
               --resource-group rg-appservice-infrastructure-dev-04 \
               --docker-custom-image-name ${{ secrets.DOCKER_USERNAME }}/todo-app \
               --docker-registry-server-url https://index.docker.io
           fi
+      
 
       - name: ⚙️ Set App Service port setting
         run: |
